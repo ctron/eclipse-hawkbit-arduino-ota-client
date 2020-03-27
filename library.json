@@ -14,8 +14,8 @@
     "url": "https://github.com/ctron/eclipse-hawkbit-arduino-ota-client"
   },
   "dependencies": {
-    "ArduinoJson": "^5.13.1"
+    "ArduinoJson": "^6.0.0"
   },
-  "version": "0.1.0",
+  "version": "0.2.0",
   "frameworks": "arduino"
 }

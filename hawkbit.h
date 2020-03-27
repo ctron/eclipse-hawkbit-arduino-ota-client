@@ -27,10 +27,25 @@ class Chunk;
 class Deployment;
 class State;
 class UpdateResult;
+class DownloadResult;
+class HawkbitClient;
 
 class UpdateResult {
     public:
         UpdateResult(uint32_t code) :
+            _code(code)
+        {
+        }
+
+        uint32_t code() const { return this->_code; }
+
+    private:
+        uint32_t _code;
+};
+
+class DownloadResult {
+    public:
+        DownloadResult(uint32_t code) :
             _code(code)
         {
         }
@@ -93,6 +108,7 @@ class Chunk {
         const String& part() const { return _part; }
         const String& version() const { return _version; }
         const String& name() const { return _name; }
+        const std::list<Artifact>& artifacts() const { return _artifacts; }
 
         void dump(Print& out, const String& prefix = "") const {
             out.printf("%s%s - %s (%s)\n", prefix.c_str(), this->_name.c_str(), this->_version.c_str(), this->_part.c_str());
@@ -122,6 +138,7 @@ class Deployment {
         }
 
         const String& id() const { return _id; }
+        const std::list<Chunk>& chunks() const { return _chunks; }
 
         void dump(Print& out, const String& prefix = "") const {
             out.printf("%sDeployment: %s\n", prefix.c_str(), this->_id.c_str());
@@ -251,6 +268,34 @@ class State {
         Registration _registration;
 };
 
+class DownloadError {
+    public:
+        DownloadError(uint32_t code) :
+            _code(code)
+        {
+        }
+
+        uint32_t code() const { return this->_code; }
+
+    private:
+        uint32_t _code;
+};
+
+class Download {
+    public:
+        Stream& stream() { return this->_stream; }
+
+    private:
+        Stream& _stream;
+
+        Download(Stream& stream) :
+            _stream(stream)
+         {
+         }
+
+    friend HawkbitClient;
+};
+
 class HawkbitClient {
     public:
 
@@ -265,17 +310,45 @@ class HawkbitClient {
 
         State readState();
 
-        UpdateResult reportProgress(const Deployment& deployment, uint32_t done, uint32_t total, std::initializer_list<String> details = {});
+        template<typename DownloadHandler>
+        void download(const Artifact& artifact, DownloadHandler function, const String& linkType = "download")
+        {
+            auto href = artifact.links().find(linkType);
 
-        UpdateResult reportComplete(const Deployment& deployment, bool success, std::initializer_list<String> details = {});
+            if ( href == artifact.links().end()) {
+                throw String("Missing link for download");
+            }
+
+            _http.begin(this->_wifi, href->second);
+
+            _http.addHeader("Authorization", this->_authToken);
+
+            int code = _http.GET();
+            log_i("Result - code: %d", code);
+
+            if (code == HTTP_CODE_OK ) {
+                Download d(_http.getStream());
+                function(d);
+            }
+
+            _http.end();
+
+            if (code != HTTP_CODE_OK ) {
+                throw DownloadError(code);
+            }
+        };
+
+        UpdateResult reportProgress(const Deployment& deployment, uint32_t done, uint32_t total, std::vector<String> details = {});
+
+        UpdateResult reportComplete(const Deployment& deployment, bool success = true, std::vector<String> details = {});
         
-        UpdateResult reportScheduled(const Deployment& deployment, std::initializer_list<String> details = {});
+        UpdateResult reportScheduled(const Deployment& deployment, std::vector<String> details = {});
         
-        UpdateResult reportResumed(const Deployment& deployment, std::initializer_list<String> details = {});
+        UpdateResult reportResumed(const Deployment& deployment, std::vector<String> details = {});
         
-        UpdateResult reportCancelAccepted(const Stop& stop, std::initializer_list<String> details = {});
+        UpdateResult reportCancelAccepted(const Stop& stop, std::vector<String> details = {});
         
-        UpdateResult reportCancelRejected(const Stop& stop, std::initializer_list<String> details = {});
+        UpdateResult reportCancelRejected(const Stop& stop, std::vector<String> details = {});
 
         UpdateResult updateRegistration(const Registration& registration, const std::map<String,String>& data, MergeMode mergeMode = REPLACE, std::initializer_list<String> details = {});
 
@@ -296,7 +369,7 @@ class HawkbitClient {
         String feedbackUrl(const Stop& stop) const;
 
         template<typename IdProvider>
-        UpdateResult sendFeedback(IdProvider id, const String& execution, const String& finished, std::initializer_list<String> details );
+        UpdateResult sendFeedback(IdProvider id, const String& execution, const String& finished, std::vector<String> details );
 };
 
 #endif // _HAWBIT_H_

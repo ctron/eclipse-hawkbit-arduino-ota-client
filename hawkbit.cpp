@@ -248,7 +248,7 @@ String HawkbitClient::feedbackUrl(const Stop& stop) const
 }
 
 template<typename IdProvider>
-UpdateResult HawkbitClient::sendFeedback(IdProvider id, const String& execution, const String& finished, std::initializer_list<String> details)
+UpdateResult HawkbitClient::sendFeedback(IdProvider id, const String& execution, const String& finished, std::vector<String> details)
 {
     doc.clear();
 
@@ -286,7 +286,7 @@ UpdateResult HawkbitClient::sendFeedback(IdProvider id, const String& execution,
     return UpdateResult(code);
 }
 
-UpdateResult HawkbitClient::reportProgress(const Deployment& deployment, uint32_t done, uint32_t total, std::initializer_list<String> details)
+UpdateResult HawkbitClient::reportProgress(const Deployment& deployment, uint32_t done, uint32_t total, std::vector<String> details)
 {
     return sendFeedback(
         deployment,
@@ -296,7 +296,7 @@ UpdateResult HawkbitClient::reportProgress(const Deployment& deployment, uint32_
     );
 }
 
-UpdateResult HawkbitClient::reportScheduled(const Deployment& deployment, std::initializer_list<String> details)
+UpdateResult HawkbitClient::reportScheduled(const Deployment& deployment, std::vector<String> details)
 {
     return sendFeedback(
         deployment,
@@ -306,7 +306,7 @@ UpdateResult HawkbitClient::reportScheduled(const Deployment& deployment, std::i
     );
 }
 
-UpdateResult HawkbitClient::reportResumed(const Deployment& deployment, std::initializer_list<String> details)
+UpdateResult HawkbitClient::reportResumed(const Deployment& deployment, std::vector<String> details)
 {
     return sendFeedback(
         deployment,
@@ -316,7 +316,7 @@ UpdateResult HawkbitClient::reportResumed(const Deployment& deployment, std::ini
     );
 }
 
-UpdateResult HawkbitClient::reportComplete(const Deployment& deployment, bool success, std::initializer_list<String> details)
+UpdateResult HawkbitClient::reportComplete(const Deployment& deployment, bool success, std::vector<String> details)
 {
     return sendFeedback(
         deployment,
@@ -326,7 +326,7 @@ UpdateResult HawkbitClient::reportComplete(const Deployment& deployment, bool su
     );
 }
 
-UpdateResult HawkbitClient::reportCancelAccepted(const Stop& stop, std::initializer_list<String> details)
+UpdateResult HawkbitClient::reportCancelAccepted(const Stop& stop, std::vector<String> details)
 {
     return sendFeedback(
         stop,
@@ -336,7 +336,7 @@ UpdateResult HawkbitClient::reportCancelAccepted(const Stop& stop, std::initiali
     );
 }
 
-UpdateResult HawkbitClient::reportCancelRejected(const Stop& stop, std::initializer_list<String> details)
+UpdateResult HawkbitClient::reportCancelRejected(const Stop& stop, std::vector<String> details)
 {
     return sendFeedback(
         stop,
