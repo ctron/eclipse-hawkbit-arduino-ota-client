@@ -326,12 +326,22 @@ UpdateResult HawkbitClient::reportComplete(const Deployment& deployment, bool su
     );
 }
 
+UpdateResult HawkbitClient::reportCanceled(const Deployment& deployment, std::vector<String> details)
+{
+    return sendFeedback(
+        deployment,
+        "canceled",
+        "none",
+        details
+    );
+}
+
 UpdateResult HawkbitClient::reportCancelAccepted(const Stop& stop, std::vector<String> details)
 {
     return sendFeedback(
         stop,
-        "canceled",
-        "none",
+        "closed",
+        "success",
         details
     );
 }
@@ -340,8 +350,8 @@ UpdateResult HawkbitClient::reportCancelRejected(const Stop& stop, std::vector<S
 {
     return sendFeedback(
         stop,
-        "rejected",
-        "none",
+        "closed",
+        "failure",
         details
     );
 }

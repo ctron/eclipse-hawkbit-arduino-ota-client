@@ -9,7 +9,7 @@
 WiFiMulti wifi;
 EspClass esp;
 WiFiClientSecure client;
-HawkbitClient update(client, "https://hawkbit-hawkbit.apps.wonderful.iot-playground.org", "DEFAULT","dev02", "a1d313ffff0b77caa335068d455447c6");
+HawkbitClient update(client, "https://my-hawbit-server", "DEFAULT", "deviceId", "token");
 
 const char * root_ca = "-----BEGIN CERTIFICATE-----\n\
 MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\n\

@@ -350,6 +350,8 @@ class HawkbitClient {
         
         UpdateResult reportCancelRejected(const Stop& stop, std::vector<String> details = {});
 
+        UpdateResult reportCanceled(const Deployment& deployment, std::vector<String> details = {});
+
         UpdateResult updateRegistration(const Registration& registration, const std::map<String,String>& data, MergeMode mergeMode = REPLACE, std::initializer_list<String> details = {});
 
     private:
