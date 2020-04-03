@@ -48,7 +48,6 @@ UpdateResult HawkbitClient::updateRegistration(const Registration& registration,
     }
 
     _doc.createNestedObject("data");
-    _doc["data"]["mac"] = WiFi.macAddress();
     for (const std::pair<String,String>& entry : data) {
         _doc["data"][String(entry.first)] = entry.second;
     }
