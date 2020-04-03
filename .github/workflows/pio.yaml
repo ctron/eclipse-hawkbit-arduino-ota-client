@@ -23,6 +23,6 @@ jobs:
       run: platformio lib -g install 1
 
     - name: Run PlatformIO
-      run: platformio ci --board=esp32dev
+      run: platformio ci --lib="." --board=esp32dev
       env:
         PLATFORMIO_CI_SRC: examples/main.cpp
