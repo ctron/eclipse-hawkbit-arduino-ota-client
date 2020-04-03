@@ -73,6 +73,7 @@ UpdateResult HawkbitClient::updateRegistration(const Registration& registration,
 
     String buffer;
     size_t len = serializeJson(_doc, buffer);
+    (void)len; // ignore unused
 
     log_d("JSON - len: %d", len);
 
@@ -278,6 +279,7 @@ UpdateResult HawkbitClient::sendFeedback(IdProvider id, const String& execution,
 
     String buffer;
     size_t len = serializeJson(_doc, buffer);
+    (void)len; // ignore unused
 
     log_d("JSON - len: %d", len);
 #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_DEBUG
