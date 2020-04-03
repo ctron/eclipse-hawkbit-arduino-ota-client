@@ -74,13 +74,13 @@ UpdateResult HawkbitClient::updateRegistration(const Registration& registration,
     String buffer;
     size_t len = serializeJson(_doc, buffer);
 
-    log_i("JSON - len: %d", len);
+    log_d("JSON - len: %d", len);
 
     int code = _http.PUT(buffer);
-    log_i("Result - code: %d", code);
+    log_d("Result - code: %d", code);
 
     String resultPayload = _http.getString();
-    log_i("Result - payload: %s", resultPayload.c_str());
+    log_d("Result - payload: %s", resultPayload.c_str());
 
     _http.end();
 
@@ -97,12 +97,13 @@ State HawkbitClient::readState()
     _doc.clear();
 
     int code = _http.GET();
-    log_i("Result - code: %d", code);
+    log_d("Result - code: %d", code);
     String resultPayload = _http.getString();
-    log_i("Result - payload: %s", resultPayload.c_str());
+    log_d("Result - payload: %s", resultPayload.c_str());
     if ( code == HTTP_CODE_OK ) {
         DeserializationError error = deserializeJson(_doc, resultPayload);
         if (error) {
+            _http.end();
             // FIXME: need a way to handle errors
             throw 1;
         }
@@ -111,23 +112,23 @@ State HawkbitClient::readState()
 
     String href = _doc["_links"]["deploymentBase"]["href"] | "";
     if (!href.isEmpty()) {
-        log_i("Fetching deployment: %s", href.c_str());
+        log_d("Fetching deployment: %s", href.c_str());
         return State(this->readDeployment(href));
     }
 
     href = _doc["_links"]["configData"]["href"] | "";
     if (!href.isEmpty()) {
-        log_i("Need to register", href.c_str());
+        log_d("Need to register", href.c_str());
         return State(Registration(href));
     }
 
     href = _doc["_links"]["cancelAction"]["href"] | "";
     if (!href.isEmpty()) {
-        log_i("Fetching cancel action: %s", href.c_str());
+        log_d("Fetching cancel action: %s", href.c_str());
         return State(this->readCancel(href));
     }
 
-    log_i("No update");
+    log_d("No update");
     return State();
 }
 
@@ -196,12 +197,13 @@ Deployment HawkbitClient::readDeployment(const String& href)
     _doc.clear();
 
     int code = _http.GET();
-    log_i("Result - code: %d", code);
+    log_d("Result - code: %d", code);
     String resultPayload = _http.getString();
-    log_i("Result - payload: %s", resultPayload.c_str());
+    log_d("Result - payload: %s", resultPayload.c_str());
     if ( code == HTTP_CODE_OK ) {
         DeserializationError error = deserializeJson(_doc, resultPayload);
         if (error) {
+            _http.end();
             // FIXME: need a way to handle errors
             throw 1;
         }
@@ -225,12 +227,13 @@ Stop HawkbitClient::readCancel(const String& href)
     _doc.clear();
 
     int code = _http.GET();
-    log_i("Result - code: %d", code);
+    log_d("Result - code: %d", code);
     String resultPayload = _http.getString();
-    log_i("Result - payload: %s", resultPayload.c_str());
+    log_d("Result - payload: %s", resultPayload.c_str());
     if ( code == HTTP_CODE_OK ) {
         DeserializationError error = deserializeJson(_doc, resultPayload);
         if (error) {
+            _http.end();
             // FIXME: need a way to handle errors
             throw 1;
         }
