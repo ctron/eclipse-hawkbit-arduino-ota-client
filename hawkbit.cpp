@@ -14,16 +14,15 @@
 #include "hawkbit.h"
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
-
-StaticJsonDocument<16*1024> doc;
 
 HawkbitClient::HawkbitClient(
+    JsonDocument& doc,
     WiFiClient& wifi,
     const String& baseUrl,
     const String& tenantName,
     const String& controllerId,
     const String &securityToken) :
+    _doc(doc),
     _wifi(wifi),
     _baseUrl(baseUrl),
     _tenantName(tenantName),
@@ -34,33 +33,33 @@ HawkbitClient::HawkbitClient(
 
 UpdateResult HawkbitClient::updateRegistration(const Registration& registration, const std::map<String,String>& data, MergeMode mergeMode, std::initializer_list<String> details)
 {
-    doc.clear();
+    _doc.clear();
 
     switch(mergeMode) {
         case MERGE:
-            doc["mode"] = "merge";
+            _doc["mode"] = "merge";
             break;
         case REPLACE:
-            doc["mode"] = "replace";
+            _doc["mode"] = "replace";
             break;
         case REMOVE:
-            doc["mode"] = "remove";
+            _doc["mode"] = "remove";
             break;
     }
 
-    doc.createNestedObject("data");
-    doc["data"]["mac"] = WiFi.macAddress();
+    _doc.createNestedObject("data");
+    _doc["data"]["mac"] = WiFi.macAddress();
     for (const std::pair<String,String>& entry : data) {
-        doc["data"][String(entry.first)] = entry.second;
+        _doc["data"][String(entry.first)] = entry.second;
     }
 
-    JsonArray d = doc["status"].createNestedArray("details");
+    JsonArray d = _doc["status"].createNestedArray("details");
     for (auto detail : details) {
         d.add(detail);
     }
 
-    doc["status"]["execution"] = "closed";
-    doc["status"]["result"]["finished"] = "success";
+    _doc["status"]["execution"] = "closed";
+    _doc["status"]["result"]["finished"] = "success";
 
     _http.begin(this->_wifi, registration.url());
 
@@ -69,11 +68,11 @@ UpdateResult HawkbitClient::updateRegistration(const Registration& registration,
     _http.addHeader("Authorization", this->_authToken);
 
 #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_DEBUG
-    serializeJsonPretty(doc, Serial);
+    serializeJsonPretty(_doc, Serial);
 #endif
 
     String buffer;
-    size_t len = serializeJson(doc, buffer);
+    size_t len = serializeJson(_doc, buffer);
 
     log_i("JSON - len: %d", len);
 
@@ -95,12 +94,14 @@ State HawkbitClient::readState()
     _http.addHeader("Authorization", this->_authToken);
     _http.addHeader("Accept", "application/hal+json");
 
+    _doc.clear();
+
     int code = _http.GET();
     log_i("Result - code: %d", code);
     String resultPayload = _http.getString();
     log_i("Result - payload: %s", resultPayload.c_str());
     if ( code == HTTP_CODE_OK ) {
-        DeserializationError error = deserializeJson(doc, resultPayload);
+        DeserializationError error = deserializeJson(_doc, resultPayload);
         if (error) {
             // FIXME: need a way to handle errors
             throw 1;
@@ -108,19 +109,19 @@ State HawkbitClient::readState()
     }
     _http.end();
 
-    String href = doc["_links"]["deploymentBase"]["href"] | "";
+    String href = _doc["_links"]["deploymentBase"]["href"] | "";
     if (!href.isEmpty()) {
         log_i("Fetching deployment: %s", href.c_str());
         return State(this->readDeployment(href));
     }
 
-    href = doc["_links"]["configData"]["href"] | "";
+    href = _doc["_links"]["configData"]["href"] | "";
     if (!href.isEmpty()) {
         log_i("Need to register", href.c_str());
         return State(Registration(href));
     }
 
-    href = doc["_links"]["cancelAction"]["href"] | "";
+    href = _doc["_links"]["cancelAction"]["href"] | "";
     if (!href.isEmpty()) {
         log_i("Fetching cancel action: %s", href.c_str());
         return State(this->readCancel(href));
@@ -192,12 +193,14 @@ Deployment HawkbitClient::readDeployment(const String& href)
     _http.addHeader("Authorization", this->_authToken);
     _http.addHeader("Accept", "application/hal+json");
 
+    _doc.clear();
+
     int code = _http.GET();
     log_i("Result - code: %d", code);
     String resultPayload = _http.getString();
     log_i("Result - payload: %s", resultPayload.c_str());
     if ( code == HTTP_CODE_OK ) {
-        DeserializationError error = deserializeJson(doc, resultPayload);
+        DeserializationError error = deserializeJson(_doc, resultPayload);
         if (error) {
             // FIXME: need a way to handle errors
             throw 1;
@@ -205,11 +208,11 @@ Deployment HawkbitClient::readDeployment(const String& href)
     }
     _http.end();
 
-    String id = doc["id"];
-    String download = doc["deployment"]["download"];
-    String update = doc["deployment"]["update"];
+    String id = _doc["id"];
+    String download = _doc["deployment"]["download"];
+    String update = _doc["deployment"]["update"];
 
-    return Deployment(id, download, update, chunks(doc["deployment"]["chunks"]));
+    return Deployment(id, download, update, chunks(_doc["deployment"]["chunks"]));
 }
 
 Stop HawkbitClient::readCancel(const String& href)
@@ -219,12 +222,14 @@ Stop HawkbitClient::readCancel(const String& href)
     _http.addHeader("Authorization", this->_authToken);
     _http.addHeader("Accept", "application/hal+json");
 
+    _doc.clear();
+
     int code = _http.GET();
     log_i("Result - code: %d", code);
     String resultPayload = _http.getString();
     log_i("Result - payload: %s", resultPayload.c_str());
     if ( code == HTTP_CODE_OK ) {
-        DeserializationError error = deserializeJson(doc, resultPayload);
+        DeserializationError error = deserializeJson(_doc, resultPayload);
         if (error) {
             // FIXME: need a way to handle errors
             throw 1;
@@ -232,7 +237,7 @@ Stop HawkbitClient::readCancel(const String& href)
     }
     _http.end();
 
-    String stopId = doc["cancelAction"]["stopId"] | "";
+    String stopId = _doc["cancelAction"]["stopId"] | "";
     
     return Stop(stopId);
 }
@@ -250,17 +255,17 @@ String HawkbitClient::feedbackUrl(const Stop& stop) const
 template<typename IdProvider>
 UpdateResult HawkbitClient::sendFeedback(IdProvider id, const String& execution, const String& finished, std::vector<String> details)
 {
-    doc.clear();
+    _doc.clear();
 
-    doc["id"] = id.id();
+    _doc["id"] = id.id();
     
-    JsonArray d = doc["status"].createNestedArray("details");
+    JsonArray d = _doc["status"].createNestedArray("details");
     for (auto detail : details) {
         d.add(detail);
     }
 
-    doc["status"]["execution"] = execution;
-    doc["status"]["result"]["finished"] = finished;
+    _doc["status"]["execution"] = execution;
+    _doc["status"]["result"]["finished"] = finished;
 
     _http.begin(this->_wifi, this->feedbackUrl(id));
 
@@ -269,17 +274,19 @@ UpdateResult HawkbitClient::sendFeedback(IdProvider id, const String& execution,
     _http.addHeader("Authorization", this->_authToken);
 
     String buffer;
-    size_t len = serializeJson(doc, buffer);
+    size_t len = serializeJson(_doc, buffer);
 
-    log_i("JSON - len: %d", len);
-    serializeJsonPretty(doc, Serial);
+    log_d("JSON - len: %d", len);
+#if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_DEBUG
+    serializeJsonPretty(_doc, Serial);
+#endif
 
     // FIXME: handle result
     int code = _http.POST(buffer);
-    log_i("Result - code: %d", code);
+    log_d("Result - code: %d", code);
 
     String resultPayload = _http.getString();
-    log_i("Result - payload: %s", resultPayload.c_str());
+    log_d("Result - payload: %s", resultPayload.c_str());
 
     _http.end();
 

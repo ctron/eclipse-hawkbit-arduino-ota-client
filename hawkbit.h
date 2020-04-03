@@ -11,8 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 
-#ifndef _HAWBIT_H_
-#define _HAWBIT_H_
+#pragma once
 
 #include <vector>
 #include <utility>
@@ -21,6 +20,7 @@
 #include <HTTPClient.h>
 #include <map>
 #include <list>
+#include <ArduinoJson.h>
 
 class Artifact;
 class Chunk;
@@ -302,7 +302,8 @@ class HawkbitClient {
         typedef enum { MERGE, REPLACE, REMOVE } MergeMode;
 
         HawkbitClient(
-            WiFiClient &wifi,
+            JsonDocument& json,
+            WiFiClient& wifi,
             const String& baseUrl,
             const String& tenantName,
             const String& controllerId,
@@ -355,7 +356,8 @@ class HawkbitClient {
         UpdateResult updateRegistration(const Registration& registration, const std::map<String,String>& data, MergeMode mergeMode = REPLACE, std::initializer_list<String> details = {});
 
     private:
-        WiFiClient&_wifi;
+        JsonDocument& _doc;
+        WiFiClient& _wifi;
     
         HTTPClient _http;
 
@@ -373,5 +375,3 @@ class HawkbitClient {
         template<typename IdProvider>
         UpdateResult sendFeedback(IdProvider id, const String& execution, const String& finished, std::vector<String> details );
 };
-
-#endif // _HAWBIT_H_

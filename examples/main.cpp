@@ -3,13 +3,17 @@
 
 #include <hawkbit.h>
 #include <Update.h>
+#include <ArduinoJson.h>
 
 #define VERSION "1.0.0"
 
 WiFiMulti wifi;
 EspClass esp;
 WiFiClientSecure client;
-HawkbitClient update(client, "https://my-hawbit-server", "DEFAULT", "deviceId", "token");
+StaticJsonDocument<16*1024> doc;
+
+#define STRINGIFY(x) #x
+HawkbitClient update(doc, client, STRINGIFY(HAWKBIT_URL), STRINGIFY(HAWKBIT_TENANT), STRINGIFY(HAWKBIT_DEVICE_ID), STRINGIFY(HAWKBIT_DEVICE_TOKEN));
 
 const char * root_ca = "-----BEGIN CERTIFICATE-----\n\
 MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\n\
