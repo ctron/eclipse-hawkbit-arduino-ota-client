@@ -361,6 +361,24 @@ class HawkbitClient {
 
         UpdateResult updateRegistration(const Registration& registration, const std::map<String,String>& data, MergeMode mergeMode = REPLACE, std::initializer_list<String> details = {});
 
+        /**
+         * Set the timeout (in milliseconds) for establishing a connection to the server.
+         * @param connectTimeout int32_t
+         */
+        void connectTimeout(int32_t connectTimeout)
+        {
+            this->_http.setConnectTimeout(connectTimeout);
+        }
+
+        /**
+         * Set the timeout (in seconds) for the TCP connection.
+         * @param connectTimeout int32_t
+         */
+        void timeout(uint16_t timeout)
+        {
+            this->_http.setTimeout(timeout);
+        }
+
     private:
         JsonDocument& _doc;
         WiFiClient& _wifi;
