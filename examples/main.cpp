@@ -98,7 +98,7 @@ void processUpdate(const Deployment& deployment) {
 
   try {
 
-    update.download(artifact, [artifact, deployment](Download& d){
+    update.download(artifact, "download-http", [artifact, deployment](Download& d){
 
       // begin update
 
@@ -128,7 +128,7 @@ void processUpdate(const Deployment& deployment) {
           throw String("Failed to end update");
         }
       }
-    }, "download-http");
+    });
 
   }
   catch ( DownloadError err ) {

@@ -312,7 +312,13 @@ class HawkbitClient {
         State readState();
 
         template<typename DownloadHandler>
-        void download(const Artifact& artifact, DownloadHandler function, const String& linkType = "download")
+        void download(const Artifact& artifact, DownloadHandler function)
+        {
+            download(artifact, "download", function);
+        }
+
+        template<typename DownloadHandler>
+        void download(const Artifact& artifact, const String& linkType, DownloadHandler function)
         {
             auto href = artifact.links().find(linkType);
 
